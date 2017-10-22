@@ -80,10 +80,6 @@ def parse_crime():
 def get_best_location(lat, lon, radius):
     pass
 
-# TODO: algorithm to calculate crime probability
-def calculate_crime_probability(lat, lon, radius):
-    pass
-
 # TODO: get crime probability.
 def get_crime_probability(uid):
     parking = None
