@@ -61,17 +61,19 @@ def update_parking(lat, lon, radius):
     parkings = list()
     for parking in json:
         # lat, lon, price, distance, hours_of_operation, max_time)
-        parkings.append(Parking(parking['Meter_ID'], parking['Latitude'],
+        p = Parking(parking['Meter_ID'], parking['Latitude'],
             parking['Longitude'],
-            getDistance(lat, lon, float(parking['Latitude'], parking['Longitude'])),
-            parking['Hours_of_Operation'], parking['Time_Limits']))
+            parking['Rate'],
+            getDistance(lat, lon, float(parking['Latitude']), float(parking['Longitude'])),
+            parking['Hours_of_Operation'], parking['Time_Limits'])
+        parkings.append(p)
 
 def parse_crime():
     json = get_json_f('dataset/y7pv-r3kh.json')
     global crimes
     crimes = []
     for incident in json:
-        crimes.append(Crime(incident['RMS CDW ID'],incident['Longitude'],incident['Latitude']))
+        crimes.append(Crime(incident['rms_cdw_id'],incident['longitude'],incident['latitude']))
 
 # TODO: get top 3 location around a fixed radius around the user's destination (lat, lon)
 # Return a list of Parking class
@@ -93,3 +95,5 @@ def get_crime_probability(uid):
 
 update_parking(47.660297, -122.330170, 1000)
 print(parkings)
+parse_crime()
+print(crimes)
