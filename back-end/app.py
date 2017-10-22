@@ -1,7 +1,9 @@
 import json
 import math
 import requests
-from flask import request
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
 
 KEY = 'l6GBK4VxJWCgBAAgKyifQyK2bleECQG3'
 SECRET = 'cAbR2VK4WLqTTG2T'
@@ -35,10 +37,10 @@ def get_json_f(filename):
         d = json.load(json_data)
     return d
 
-def get_json_parking_rule(lat, lon, max_radius, max_results):
+def get_json_parking_rule(lat, lon, max_radius):
     global KEY
     params = {'lat': lat, 'long' : lon, 'max-distance' : max_radius,
-            'max_results' : max_results, 'apikey' : KEY}
+            'max_results' : 10, 'apikey' : KEY}
     r = requests.get('https://apis.solarialabs.com/shine/v1/parking-rules/meters',
             params=params)
     return r.json()
@@ -47,6 +49,10 @@ def rad(x):
     return x * math.pi / 180;
 
 def getDistance(lat1, long1, lat2, long2):
+    lat1 = float(lat1)
+    long1 = float(long1)
+    lat2 = float(lat2)
+    long2 = float(long2)
     R = 6378137;
     dLat = rad(lat2 - lat1);
     dLong = rad(long2 - long1);
@@ -55,20 +61,23 @@ def getDistance(lat1, long1, lat2, long2):
     d = R * c;
     return d; # returns the distance in mete
 
-def getInformation(uid):
-    return get_uid_match(uid)
+def getInformation(uid, lat, lon):
+    return get_uid_match(uid, lat, lon, 10000)
 
 def parse_crime():
     json = get_json_f('dataset/y7pv-r3kh.json')
     global crimes
     crimes = []
     for incident in json:
-        crimes.append(Crime(incident['rms_cdw_id'],incident['longitude'],incident['latitude']))
+        cr = Crime(incident['rms_cdw_id'],incident['longitude'],incident['latitude'])
+        crimes.append(cr)
+parse_crime()
+
 
 # TODO: get top 3 location around a fixed radius around the user's destination (lat, lon)
 # Return a list of Parking class
 def get_best_location(lat, lon, radius):
-    json = get_json_parking_rule(lat, lon, radius, 25)
+    json = get_json_parking_rule(lat, lon, radius)
     global parkings
     bestLocations = list()
     for parking in json:
@@ -78,35 +87,39 @@ def get_best_location(lat, lon, radius):
             parking['Rate'],
             getDistance(lat, lon, float(parking['Latitude']), float(parking['Longitude'])),
             parking['Hours_of_Operation'], parking['Time_Limits'])
-        bestLocations.append(P);
+        bestLocations.append(p);
         if len(bestLocations) > 3:
             return bestLocations
 
 # TODO: get crime probability.
-def get_crime_probability(uid, lon, lat, radius):
+def get_crime_probability(uid, lat, lon, radius):
 
-    json = get_json_parking_rule(lat, lon, radius, 25)
+    json = get_json_parking_rule(lat, lon, radius)
     p = None
     for parking in json:
         # TODO: look for particular uid
         if(parking['Meter_ID'] == uid):
-    p = get_uid_match(uid)
+            p = get_uid_match(uid, lat, lon, radius)
+            break
     closeCrimeCount = 0
-    for spot in parkings:
-        if(getDistance(spot.lat, spot.lon, p.lat, p.long) < 1000):
-            closeCrimeCount++
+    for spot in crimes:
+        if(getDistance(spot.lat, spot.lon, p.lat, p.lon) < 100000):
+            closeCrimeCount += 1
     if(closeCrimeCount >= 250):
         probability = 3
-    elif(closecrimeCount >= 125):
+    elif(closeCrimeCount >= 125):
         probability = 2
     else:
         probability = 1
-    return probability
-def get_uid_match(uid):
-    json = get_json_parking_rule(lat, lon, radius, 25)
+    return (closeCrimeCount, probability)
+
+def get_uid_match(uid, lat, lon, radius):
+    print(type(uid), lat, lon, radius)
+    json = get_json_parking_rule(lat, lon, radius)
     p = None
     for parking in json:
         # TODO: look for particular uid
+        print(parking['Meter_ID'])
         if(parking['Meter_ID'] == uid):
 
             return Parking(parking['Meter_ID'], parking['Latitude'],
@@ -121,13 +134,45 @@ def get_uid_match(uid):
 @app.route('/crime_probability', methods=['GET'])
 def crime_probability():
     uid = request.args.get('uid')
-    return jsonify({'result' : get_crime_probability(uid)})
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    (ct, p) = get_crime_probability(uid, lat, lon, 1000)
+    return jsonify({'result' : { 'probability' : p, 'count': ct }})
 
 @app.route('/information', methods=['GET'])
 def information():
     uid = request.args.get('uid')
-    return jsonify({'result': get_information(uid)})
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    p = getInformation(uid, lat, lon)
+    return jsonify({'result' : {
+        'uid' : p.uid,
+        'lat' : p.lat,
+        'lon' : p.lon,
+        'price' : p.price,
+        'distance' : p.distance,
+        'hours_of_operation' : p.hours_of_operation,
+        'max_time' : p.max_time
+        }})
 
-@app.route('/bkeghj')
-def bleh():
-    pass
+@app.route('/best_parking')
+def best_parking():
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    locs = get_best_location(lat, lon, 10000)
+    llocs = list()
+    for loc in locs:
+        llocs.append({
+            'uid' : loc.uid,
+            'lat' : loc.lat,
+            'lon' : loc.lon,
+            'price' : loc.price,
+            'distance' : loc.distance,
+            'hours_of_operation' : loc.hours_of_operation,
+            'max_time' : loc.max_time
+            })
+        return jsonify({'result': llocs})
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080, debug=True)
