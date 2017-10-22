@@ -68,6 +68,10 @@ def update_parking(lat, lon, radius):
 
 def parse_crime():
     json = get_json_f('dataset/y7pv-r3kh.json')
+    global crimes
+    crimes = []
+    for incident in json:
+        crimes.append(Crime(incident['RMS CDW ID'],incident['Longitude'],incident['Latitude']))
 
 # TODO: get top 3 location around a fixed radius around the user's destination (lat, lon)
 # Return a list of Parking class
@@ -86,3 +90,6 @@ def get_crime_probability(uid):
             parking = p
             break
     return calculate_crime_probability(lat, lon, radius)
+
+update_parking(47.660297, -122.330170, 1000)
+print(parkings)
