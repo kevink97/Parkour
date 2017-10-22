@@ -68,7 +68,6 @@ def update_parking(lat, lon, radius):
 
 def parse_crime():
     json = get_json_f('dataset/y7pv-r3kh.json')
-    json = request(RMS CDW ID )
 
 # TODO: get top 3 location around a fixed radius around the user's destination (lat, lon)
 # Return a list of Parking class
@@ -76,11 +75,14 @@ def get_best_location(lat, lon, radius):
     pass
 
 # TODO: algorithm to calculate crime probability
-# NOTE: May want radius????????????????
-def calculate_crime_probability(uid):
+def calculate_crime_probability(lat, lon, radius):
     pass
 
 # TODO: get crime probability.
 def get_crime_probability(uid):
-    return calculate_crime_probability(uid)
-
+    parking = None
+    for p in parkings:
+        if p.uid == uid:
+            parking = p
+            break
+    return calculate_crime_probability(lat, lon, radius)
