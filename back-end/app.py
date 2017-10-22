@@ -1,6 +1,7 @@
 import json
 import math
 import requests
+from flask import request
 
 KEY = 'l6GBK4VxJWCgBAAgKyifQyK2bleECQG3'
 SECRET = 'cAbR2VK4WLqTTG2T'
@@ -89,7 +90,16 @@ def get_crime_probability(uid):
             break
     return calculate_crime_probability(lat, lon, radius)
 
-update_parking(47.660297, -122.330170, 1000)
-print(parkings)
-parse_crime()
-print(crimes)
+@app.route('/crime_probability', methods=['GET'])
+def crime_probability():
+    uid = request.args.get('uid')
+    return jsonify({'result' : get_crime_probability(uid)})
+
+@app.route('/information', methods=['GET'])
+def information():
+    uid = request.args.get('uid')
+    return jsonify({'result': get_information(uid)})
+
+@app.route('/bkeghj')
+def bleh():
+    pass
