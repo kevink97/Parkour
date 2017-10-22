@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+    <link rel="stylesheet" href="style/bleh.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+
+  </head>
+  <body>
+    <h1><i class="glyphicon glyphicon-road"></i> Parkour <i class="glyphicon glyphicon-road"></i></h1>
+    <nav>
+      <ul>
+        <li>
+          <a href=""><i class="fa fa-user-circle-o fa-3x" aria-hidden="true"></i></a>
+        </li>
+        <li>
+            <input type="text" id="Address" name="Address"/>
+            <button onclick='send()'>Search</button>
+        </li>
+      </ul> 
+      <ul id = "suggestionList" class="list-group">
+        <li id="rec1" class="list-group-item list-group-item-success justify-content-between" onclick="expand()">
+          <i class ="glyphicon glyphicon-map-marker"></i> Example St. 1 <span class="badge badge-default badge-pill">$</span>
+          <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#rec1info">
+            <i class="fa fa-info-circle" aria-hidden="true"></i>
+          </button>
+          <div id="rec1info" class="collapse">
+          more info
+          </div>
+        </li>
+        <li id="rec2" class="list-group-item list-group-item-warning justify-content-between"><i class ="glyphicon glyphicon-map-marker">
+          </i> Example St. 2 <span class="badge badge-default badge-pill">$$</span>
+          <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#rec2info">
+            <i class="fa fa-info-circle" aria-hidden="true"></i>
+          </button>
+          <div id="rec2info" class="collapse">
+          more info
+          </div>
+        </li>
+
+        <li id="rec3" class="list-group-item list-group-item-danger justify-content-between">
+          <i class ="glyphicon glyphicon-map-marker"></i> Example St. 3 <span class="badge badge-default badge-pill">$</span>
+          <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#rec3info">
+            <i class="fa fa-info-circle" aria-hidden="true"></i>
+          </button>
+          <div id="rec3info" class="collapse">
+          more info
+          </div>
+          
+        </li>
+      </ul>
+    </nav>
+    
+
+  <style type="text/css">
+    div#map { width: 100%;
+   height: 400px;
+   background-color: grey; }
+  </style>
+  <div id="map"></div>
+
+      
+  <script>
+  	  function get_best(lat, lon) {
+  	  	var curr = this;
+		$.getJSON('http://0.0.0.0:8080/best_parking?lat=' + lat + '&lon=' + lon, function(data) {
+			var list = data.result;
+  	  		var locations = [];
+  	  		locations.push(['Destination', lat, lon, 0, 4])
+			for (var i = 0; i < list.length; i++) {
+				locations.push(['parking #' + i, list[i].lat, list[i].lon, list[i].uid, list[i].crime]);
+			}
+			initMap(locations, lat, lon);
+
+		});
+  	  }
+
+  	  function getColor(label) {
+  	  	if (label == 1) {
+  	  		return "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+  	  	} else if (label == 2) {
+  	  		return "https://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
+  	  	} else if (label == 3) {
+  	  		return "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
+  	  	} else {
+  	  		return "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+  	  	}
+  	  }
+
+      function initMap(locations, lat, lon) {
+	    var map = new google.maps.Map(document.getElementById('map'), {
+	      zoom: 17,
+	      center: new google.maps.LatLng(lat, lon),
+	      mapTypeId: google.maps.MapTypeId.ROADMAP
+	    });
+
+	    var infowindow = new google.maps.InfoWindow();
+
+	    var marker, i;
+
+	    for (i = 0; i < locations.length; i++) {  
+	      marker = new google.maps.Marker({
+	        position: new google.maps.LatLng(locations[i][1], locations[i][2]),
+	        map: map,
+	        icon: getColor(locations[i][4])
+	      });
+
+	      google.maps.event.addListener(marker, 'click', (function(marker, i) {
+	        return function() {
+	          infowindow.setContent(locations[i][0]);
+	          infowindow.open(map, marker);
+	        }
+	      })(marker, i));
+	    }
+      }
+    </script>
+
+  
+
+    <!-- Your web-app is https, so your scripts need to be too -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBPCOkQAsvQa2wAWrymA-HerVBHWaAXWyM"></script>
+  <!--
+  Google API key: AIzaSyBPCOkQAsvQa2wAWrymA-HerVBHWaAXWyM.
+  -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script>
+  	function send(){
+  		console.log('hi')
+  		var address = $('#Address').val();
+	  var addr = address;
+	  //for (var i = 0; i < address.length; i++) {
+	  //	if (address[i] == ' ') {
+	  //		addr.concat('+')
+	  //	} else {
+	  //		addr.concat(address[i])
+	  //	}
+	  //}
+	  var KEY = "AIzaSyAuXCn6AaG7RqJkgGW2srM6WBn6VhXpG8c";
+	  $.getJSON('https://maps.googleapis.com/maps/api/geocode/json?address=' + addr +'&key=' + KEY,
+	  	function(data) {
+	  		var lat = data.results[0].geometry.location.lat;
+	  		var lon = data.results[0].geometry.location.lng;
+	  		get_best(lat, lon);
+	  	});
+	}
+  </script>
+  </body>
+</html>

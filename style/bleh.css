@@ -1,0 +1,59 @@
+/* styles */
+/* called by your view template */
+
+/* You might want to try something fancier: */
+/* less: http://lesscss.org/ */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: helvetica, arial, sans-serif;
+  margin: 25px;
+}
+
+h1 {
+  font-weight: bold;
+  color: pink;
+  text-align: center;
+}
+
+
+
+
+#search-bar {
+  text-align: right;
+  margin-right: 0px;
+  
+}
+
+form {
+  border: none;
+}
+form input { 
+  margin: 10px;
+}
+
+nav ul {
+  display: inline;
+}
+
+nav {
+  background-color: #bbdaa4;
+}
+
+#map {
+  text-align: center;
+}
+
+a {
+  padding-left: 20px;
+  font-size: 30px;
+  font-weight: bold;
+}
+
+
+#suggestionList btn{
+
+}
