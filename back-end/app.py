@@ -2,8 +2,10 @@ import json
 import math
 import requests
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 KEY = 'l6GBK4VxJWCgBAAgKyifQyK2bleECQG3'
 SECRET = 'cAbR2VK4WLqTTG2T'
@@ -39,7 +41,7 @@ def get_json_f(filename):
 
 def get_json_parking_rule(lat, lon, max_radius):
     global KEY
-    params = {'lat': lat, 'long' : lon, 'max-distance' : max_radius,
+    params = {'lat': lat, 'long' : lon, 'max-distance' : 10000,
             'max_results' : 10, 'apikey' : KEY}
     r = requests.get('https://apis.solarialabs.com/shine/v1/parking-rules/meters',
             params=params)
@@ -82,11 +84,12 @@ def get_best_location(lat, lon, radius):
     bestLocations = list()
     for parking in json:
         # lat, lon, price, distance, hours_of_operation, max_time)
+        print(parking)
         p = Parking(parking['Meter_ID'], parking['Latitude'],
-            parking['Longitude'],
-            parking['Rate'],
-            getDistance(lat, lon, float(parking['Latitude']), float(parking['Longitude'])),
-            parking['Hours_of_Operation'], parking['Time_Limits'])
+                parking['Longitude'],
+                parking['Rate'],
+                getDistance(lat, lon, float(parking['Latitude']), float(parking['Longitude'])),
+                parking['Hours_of_Operation'], parking['Time_Limits'])
         bestLocations.append(p);
         if len(bestLocations) > 3:
             return bestLocations
@@ -105,9 +108,9 @@ def get_crime_probability(uid, lat, lon, radius):
     for spot in crimes:
         if(getDistance(spot.lat, spot.lon, p.lat, p.lon) < 100000):
             closeCrimeCount += 1
-    if(closeCrimeCount >= 250):
+    if(closeCrimeCount >= 5):
         probability = 3
-    elif(closeCrimeCount >= 125):
+    elif(closeCrimeCount >= 1):
         probability = 2
     else:
         probability = 1
@@ -161,16 +164,21 @@ def best_parking():
     lon = request.args.get('lon')
     locs = get_best_location(lat, lon, 10000)
     llocs = list()
-    for loc in locs:
-        llocs.append({
-            'uid' : loc.uid,
-            'lat' : loc.lat,
-            'lon' : loc.lon,
-            'price' : loc.price,
-            'distance' : loc.distance,
-            'hours_of_operation' : loc.hours_of_operation,
-            'max_time' : loc.max_time
-            })
+    if locs is not None:
+        for loc in locs:
+            (ct, p) = get_crime_probability(loc.uid, loc.lat, loc.lon, 1000)
+            llocs.append({
+                'uid' : loc.uid,
+                'lat' : loc.lat,
+                'lon' : loc.lon,
+                'price' : loc.price,
+                'distance' : loc.distance,
+                'hours_of_operation' : loc.hours_of_operation,
+                'max_time' : loc.max_time,
+                'crime' : p
+                })
+        return jsonify({'result': llocs})
+    else:
         return jsonify({'result': llocs})
 
 
